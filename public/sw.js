@@ -3,6 +3,8 @@ self.addEventListener('install', function (event) {
   event.waitUntil(
     caches.open('static').then(function (cache) {
       console.log('[Service Worker] Precaching App Shell');
+      cache.add('/');
+      cache.add('/index.html');
       cache.add('/src/js/app.js');
     })
   );
