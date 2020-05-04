@@ -1,4 +1,4 @@
-var CACHE_STATIC_VERSION = 'static-v12';
+var CACHE_STATIC_VERSION = 'static-v13';
 var CACHE_DINAMIC_NAME = 'dynamic-v3';
 
 self.addEventListener('install', function (event) {
@@ -40,6 +40,19 @@ self.addEventListener('activate', function (event) {
     })
   );
   return self.clients.claim();
+});
+
+self.addEventListener('fetch', function (event) {
+  event.respondWith(
+    caches.open(CACHE_DINAMIC_NAME)
+      .then(function (cache) {
+        return fetch(event.request)
+          .then(function(res){
+            cache.put(event.request, res.clone());
+            return res;
+          });
+    })
+  );
 });
 
 self.addEventListener('fetch', function (event) {
