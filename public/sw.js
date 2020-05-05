@@ -1,4 +1,4 @@
-var CACHE_STATIC_VERSION = 'static-v13';
+var CACHE_STATIC_VERSION = 'static-v14';
 var CACHE_DINAMIC_NAME = 'dynamic-v3';
 
 self.addEventListener('install', function (event) {
@@ -43,37 +43,59 @@ self.addEventListener('activate', function (event) {
 });
 
 self.addEventListener('fetch', function (event) {
-  event.respondWith(
-    caches.open(CACHE_DINAMIC_NAME)
-      .then(function (cache) {
-        return fetch(event.request)
-          .then(function(res){
-            cache.put(event.request, res.clone());
-            return res;
-          });
-    })
-  );
+  var url = 'https://httpbin.org/get';
+  if (event.request.url.indexOf(url) > -1) {
+    event.respondWith(
+      caches.open(CACHE_DINAMIC_NAME).then(function (cache) {
+        return fetch(event.request).then(function (res) {
+          cache.put(event.request, res.clone());
+          return res;
+        });
+      })
+    );
+  } else {
+    event.respondWith(
+      caches.match(event.request).then(function (response) {
+        if (response) {
+          return response;
+        } else {
+          return fetch(event.request)
+            .then(function (res) {
+              return caches.open(CACHE_DINAMIC_NAME).then(function (cache) {
+                cache.put(event.request.url, res.clone());
+                return res;
+              });
+            })
+            .catch(function (err) {
+              return caches.open(CACHE_STATIC_VERSION).then(function (cache) {
+                return cache.match('/offline.html');
+              });
+            });
+        }
+      })
+    );
+  }
 });
 
-self.addEventListener('fetch', function (event) {
-  event.respondWith(
-    caches.match(event.request).then(function (response) {
-      if (response) {
-        return response;
-      } else {
-        return fetch(event.request)
-          .then(function (res) {
-            return caches.open(CACHE_DINAMIC_NAME).then(function (cache) {
-              cache.put(event.request.url, res.clone());
-              return res;
-            });
-          })
-          .catch(function (err) {
-            return caches.open(CACHE_STATIC_VERSION).then(function (cache) {
-              return cache.match('/offline.html');
-            });
-          });
-      }
-    })
-  );
-});
+// self.addEventListener('fetch', function (event) {
+//   event.respondWith(
+//     caches.match(event.request).then(function (response) {
+//       if (response) {
+//         return response;
+//       } else {
+//         return fetch(event.request)
+//           .then(function (res) {
+//             return caches.open(CACHE_DINAMIC_NAME).then(function (cache) {
+//               cache.put(event.request.url, res.clone());
+//               return res;
+//             });
+//           })
+//           .catch(function (err) {
+//             return caches.open(CACHE_STATIC_VERSION).then(function (cache) {
+//               return cache.match('/offline.html');
+//             });
+//           });
+//       }
+//     })
+//   );
+// });
